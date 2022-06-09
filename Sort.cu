@@ -488,7 +488,7 @@ bool sortSimpleCuda(float* const src_dst, char axis, int nx, int ny, int nz, int
 		int start_idx_stride1 = nx;
 		int start_idx_stride2 = nx*ny;
 		int sort_stride = 1;
-		sortKernel2 << <grid_dim, block_dim >> >(_d_src_dst, n_data_sort, n_data_total, start_idx_stride1, start_idx_stride2, sort_stride);
+		sortKernel << <grid_dim, block_dim >> >(_d_src_dst, n_data_sort, n_data_total, start_idx_stride1, start_idx_stride2, sort_stride);
 	}
 	else if ((axis == 'y') || (axis == 'Y'))
 	{
@@ -502,7 +502,7 @@ bool sortSimpleCuda(float* const src_dst, char axis, int nx, int ny, int nz, int
 		//std::cout << "start_idx_stride1 " << start_idx_stride1 << std::endl;
 		//std::cout << "start_idx_stride2 " << start_idx_stride2 << std::endl;
 		//std::cout << "sort_stride " << sort_stride << std::endl;
-		sortKernel2 << <grid_dim, block_dim >> >(_d_src_dst, n_data_sort, n_data_total, start_idx_stride1, start_idx_stride2, sort_stride);
+		sortKernel << <grid_dim, block_dim >> >(_d_src_dst, n_data_sort, n_data_total, start_idx_stride1, start_idx_stride2, sort_stride);
 	}
 	else if ((axis == 'z') || (axis == 'Z'))
 	{
@@ -513,7 +513,7 @@ bool sortSimpleCuda(float* const src_dst, char axis, int nx, int ny, int nz, int
 		int start_idx_stride1 = 1; 
 		int start_idx_stride2 = nx;
 		int sort_stride = nx*ny;
-		sortKernel2 << <grid_dim, block_dim >> >(_d_src_dst, n_data_sort, n_data_total, start_idx_stride1, start_idx_stride2, sort_stride);
+		sortKernel << <grid_dim, block_dim >> >(_d_src_dst, n_data_sort, n_data_total, start_idx_stride1, start_idx_stride2, sort_stride);
 	}
 	else
 	{
