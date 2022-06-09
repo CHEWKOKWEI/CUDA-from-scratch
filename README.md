@@ -1,6 +1,6 @@
 # CUDA C++ Programming from Scratch
 ## Prerequisites
-#### CUDA supported hardare
+#### CUDA supported hardware
 #### openCV 4.5.5 (https://opencv.org/releases/)
 #### Basic C++ knowledge
 
