@@ -1,4 +1,6 @@
-﻿#include <iostream>
+#include <iostream>
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include <chrono>
 #include "ImageUtils.cpp"
 #include "ArrayAdd.cuh"
@@ -7,14 +9,15 @@
 #include "Transpose.cuh"
 #include "Convolution.cuh"
 #include "Sort.cuh"
+#include "ConicSection.cuh"
 
-std::string RESOURCE_MAINDIR("C:\\Users\\kok-wei.chew\\Documents\\Visual Studio 2015\\Projects\\CudaExample\\resources");
+std::string RESOURCE_MAINDIR("D:\\CodeProject\\CudaExample\\data");
 
 void example_arrayAdd()
 {
 	std::cout << "CUDA Example - Array Addition" << std::endl;
 	int cuda_dev_id = 0;
-	int n_data = 2098;
+	int n_data = 8192;
 	float* arr1 = new float[n_data];
 	float* arr2 = new float[n_data];
 	float* result_cpu = new float[n_data];
@@ -22,12 +25,12 @@ void example_arrayAdd()
 	for (int i = 0; i < n_data; i++)
 	{
 		arr1[i] = (float)i;
-		arr2[i] = (float)(2*(n_data-i));
+		arr2[i] = (float)(2 * (n_data - i));
 	}
 	arrayAdd(result_cpu, arr1, arr2, n_data);
 	arrayAddCuda(result_gpu, arr1, arr2, n_data, cuda_dev_id);
 	std::cout << "    CPU \t\t\tGPU" << std::endl;
-	for (int i = 0; i < n_data; i+=(n_data/20))
+	for (int i = 0; i < n_data; i += (n_data / 20))
 	{
 		std::cout << " " << arr1[i] << "+" << arr2[i] << "=" << result_cpu[i] << "\t\t";
 		std::cout << " " << arr1[i] << "+" << arr2[i] << "=" << result_gpu[i] << std::endl;
@@ -51,8 +54,8 @@ void example_flip()
 		return;
 	}
 	std::cout << "Image size: (nx,ny)=(" << nx << "," << ny << ")" << std::endl;
-	float* img1 = new float[nx*ny];
-	std::memcpy(&img1[0], &img0[0], num_byte*nx*ny);
+	float* img1 = new float[nx * ny];
+	std::memcpy(&img1[0], &img0[0], num_byte * nx * ny);
 	std::cout << "Flip image using CPU." << std::endl;
 	//flipVertical(img1, nx, ny);
 	flipHorizontal(img1, nx, ny);
@@ -63,8 +66,8 @@ void example_flip()
 	}
 	std::cout << "Image saved to '" << img_savepath1 << "'." << std::endl;
 
-	float* img2 = new float[nx*ny];
-	std::memcpy(&img2[0], &img0[0], num_byte*nx*ny);
+	float* img2 = new float[nx * ny];
+	std::memcpy(&img2[0], &img0[0], num_byte * nx * ny);
 	std::cout << "Flip image using GPU." << std::endl;
 	//flipVerticalCuda(img2, nx, ny);
 	flipHorizontalCuda(img2, nx, ny);
@@ -87,14 +90,14 @@ void example_transpose()
 	int const num_byte = sizeof(float);
 	float* img0 = nullptr;
 	int nx, ny;
-	if (!readImage(img_filepath.c_str(), img0, nx, ny)) 
+	if (!readImage(img_filepath.c_str(), img0, nx, ny))
 	{
-		std::cout << "Can't read image file '"<< img_filepath <<"'." << std::endl;
+		std::cout << "Can't read image file '" << img_filepath << "'." << std::endl;
 		return;
 	}
 	std::cout << "Image size: (nx,ny)=(" << nx << "," << ny << ")" << std::endl;
-	float* img1 = new float[nx*ny];
-	std::memcpy(&img1[0], &img0[0], num_byte*nx*ny);
+	float* img1 = new float[nx * ny];
+	std::memcpy(&img1[0], &img0[0], num_byte * nx * ny);
 	std::cout << "Transpose image using CPU." << std::endl;
 	transpose(img1, nx, ny);
 	if (!saveImage(img_savepath1.c_str(), img1, ny, nx))
@@ -104,8 +107,8 @@ void example_transpose()
 	}
 	std::cout << "Image saved to '" << img_savepath1 << "'." << std::endl;
 
-	float* img2 = new float[nx*ny];
-	std::memcpy(&img2[0], &img0[0], num_byte*nx*ny);
+	float* img2 = new float[nx * ny];
+	std::memcpy(&img2[0], &img0[0], num_byte * nx * ny);
 	std::cout << "Transpose image using GPU." << std::endl;
 	transposeCuda(img2, nx, ny);
 	if (!saveImage(img_savepath2.c_str(), img2, ny, nx))
@@ -130,8 +133,8 @@ void example_convolution2d()
 	float duration_gpu1 = 0;
 	float duration_gpu2 = 0;
 	int kern_nx = 11, kern_ny = 11;
-	float* kernel = new float[kern_nx*kern_ny];
-	for (int i = 0; i < kern_nx*kern_ny; i++) { kernel[i] = 1.0 / (float)kern_nx / (float)kern_ny; }
+	float* kernel = new float[kern_nx * kern_ny];
+	for (int i = 0; i < kern_nx * kern_ny; i++) { kernel[i] = 1.0 / (float)kern_nx / (float)kern_ny; }
 	int nx, ny;
 	float* img0 = nullptr;
 	if (!readImage(img_filepath.c_str(), img0, nx, ny))
@@ -143,7 +146,7 @@ void example_convolution2d()
 	std::cout << "Kernel size: (nx,ny)=(" << kern_nx << "," << kern_ny << ")" << std::endl;
 	int conv_nx = nx - kern_nx + 1;
 	int conv_ny = ny - kern_ny + 1;
-	float* img1 = new float[conv_nx*conv_ny];
+	float* img1 = new float[conv_nx * conv_ny];
 	std::cout << "Convlove image using CPU." << std::endl;
 	time_start = std::chrono::steady_clock::now();
 	convolve2d(img1, img0, kernel, nx, ny, kern_nx, kern_ny);
@@ -156,7 +159,7 @@ void example_convolution2d()
 	}
 	std::cout << "Image saved to '" << img_savepath1 << "'." << std::endl;
 
-	float* img2 = new float[conv_nx*conv_ny];
+	float* img2 = new float[conv_nx * conv_ny];
 	std::cout << "Convlove image using GPU." << std::endl;
 	time_start = std::chrono::steady_clock::now();
 	convolve2dCuda(img2, img0, kernel, nx, ny, kern_nx, kern_ny);
@@ -169,7 +172,7 @@ void example_convolution2d()
 	}
 	std::cout << "Image saved to '" << img_savepath2 << "'." << std::endl;
 
-	float* img3 = new float[conv_nx*conv_ny];
+	float* img3 = new float[conv_nx * conv_ny];
 	std::cout << "Convlove image using GPU." << std::endl;
 	time_start = std::chrono::steady_clock::now();
 	convolve2dCuda2(img3, img0, kernel, nx, ny, kern_nx, kern_ny);
@@ -186,6 +189,39 @@ void example_convolution2d()
 	std::cout << "Complete convolution using GPU(configuration1) in " << duration_gpu1 << "ms." << std::endl;
 	std::cout << "Complete convolution using GPU(configuration2) in " << duration_gpu2 << "ms." << std::endl;
 	delete[] img0, img1, img2, img3;
+	std::cout << std::endl;
+}
+
+void example_conic_sections()
+{
+	std::cout << "CUDA Example - Conic Sections" << std::endl;
+	std::string imgdirpath = RESOURCE_MAINDIR + std::string("\\conicsection\\before");
+	std::string savepath_1 = RESOURCE_MAINDIR + std::string("\\conicsection\\after");
+	std::chrono::steady_clock::time_point time_start, time_end;
+	float duration = 0;
+	int const num_byte = sizeof(float);
+	float* arr0 = nullptr;
+	int nx, ny, nz;
+	if (!readStack(imgdirpath.c_str(), arr0, nx, ny, nz))
+	{
+		std::cout << "Can't read image stack from '" << imgdirpath << "'." << std::endl;
+		return;
+	}
+	std::cout << "Array size: (nx,ny,nz)=(" << nx << "," << ny << "," << nz << ")" << std::endl;
+	int n_angle = 360;
+	float* angle_s = new float[n_angle];
+	for (int i = 0; i < n_angle; i++) { angle_s[i] = M_PI / 180.f * (0.0 + (float)(i)); }
+	int dst_nx = nx, dst_ny = ny;
+	float x0 = nx / 2, y0 = ny / 2, z0 = nz / 2;
+	float* arr1 = new float[n_angle * dst_nx * dst_ny];
+	time_start = std::chrono::steady_clock::now();
+	if (!slicing(arr1, n_angle, dst_nx, dst_ny, arr0, nx, ny, nz, x0, y0, z0, angle_s)) { return; }
+	time_end = std::chrono::steady_clock::now();
+	duration = (float)((time_end - time_start).count()) / 1000000000.0;
+	std::cout << "Complete slicing in " << duration << "s" << std::endl;
+	if (!saveStack(savepath_1.c_str(), arr1, dst_nx, dst_ny, n_angle)) { std::cout << "Can't save image stack to '" << savepath_1 << "'." << std::endl; }
+
+	delete[] arr0, arr1;
 	std::cout << std::endl;
 }
 
@@ -210,8 +246,8 @@ void example_sort_cpu()
 	}
 	std::cout << "Array size: (nx,ny,nz)=(" << nx << "," << ny << "," << nz << ")" << std::endl;
 
-	float* arr_x = new float[nx*ny*nz];
-	std::memcpy(&arr_x[0], &arr0[0], num_byte*nx*ny*nz);
+	float* arr_x = new float[nx * ny * nz];
+	std::memcpy(&arr_x[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sort(arr_x, 'x', nx, ny, nz, algo)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -219,8 +255,8 @@ void example_sort_cpu()
 	std::cout << "Complete sorting along x-direction in " << duration << "s" << std::endl;
 	if (!saveStack(savepath_x.c_str(), arr_x, nx, ny, nz)) { std::cout << "Can't save image stack to '" << savepath_x << "'." << std::endl; }
 
-	float* arr_y = new float[nx*ny*nz];
-	std::memcpy(&arr_y[0], &arr0[0], num_byte*nx*ny*nz);
+	float* arr_y = new float[nx * ny * nz];
+	std::memcpy(&arr_y[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sort(arr_y, 'y', nx, ny, nz, algo)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -228,8 +264,8 @@ void example_sort_cpu()
 	std::cout << "Complete sorting along y-direction in " << duration << "s" << std::endl;
 	if (!saveStack(savepath_y.c_str(), arr_y, nx, ny, nz)) { std::cout << "Can't save image stack to '" << savepath_y << "'." << std::endl; }
 
-	float* arr_z = new float[nx*ny*nz];
-	std::memcpy(&arr_z[0], &arr0[0], num_byte*nx*ny*nz);
+	float* arr_z = new float[nx * ny * nz];
+	std::memcpy(&arr_z[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sort(arr_z, 'z', nx, ny, nz, algo)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -261,17 +297,8 @@ void example_sort_gpu()
 	}
 	std::cout << "Array size: (nx,ny,nz)=(" << nx << "," << ny << "," << nz << ")" << std::endl;
 
-	float* arr_x = new float[nx*ny*nz];
-	std::memcpy(&arr_x[0], &arr0[0], num_byte*nx*ny*nz);
-	time_start = std::chrono::steady_clock::now();
-	if (!sortSimpleCuda(arr_x, 'x', nx, ny, nz)) { return; }
-	time_end = std::chrono::steady_clock::now();
-	duration = (float)((time_end - time_start).count()) / 1000000000.0;
-	std::cout << "Complete sorting along x-direction in " << duration << "s" << std::endl;
-	if (!saveStack(savepath_x.c_str(), arr_x, nx, ny, nz)) { std::cout << "Can't save image stack to '" << savepath_x << "'." << std::endl; }
-
-	float* arr_y = new float[nx*ny*nz];
-	std::memcpy(&arr_y[0], &arr0[0], num_byte*nx*ny*nz);
+	float* arr_y = new float[nx * ny * nz];
+	std::memcpy(&arr_y[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sortSimpleCuda(arr_y, 'y', nx, ny, nz)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -279,14 +306,23 @@ void example_sort_gpu()
 	std::cout << "Complete sorting along y-direction in " << duration << "s" << std::endl;
 	if (!saveStack(savepath_y.c_str(), arr_y, nx, ny, nz)) { std::cout << "Can't save image stack to '" << savepath_y << "'." << std::endl; }
 
-	float* arr_z = new float[nx*ny*nz];
-	std::memcpy(&arr_z[0], &arr0[0], num_byte*nx*ny*nz);
+	float* arr_z = new float[nx * ny * nz];
+	std::memcpy(&arr_z[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sortSimpleCuda(arr_z, 'z', nx, ny, nz)) { return; }
 	time_end = std::chrono::steady_clock::now();
 	duration = (float)((time_end - time_start).count()) / 1000000000.0;
 	std::cout << "Complete sorting along z-direction in " << duration << "s" << std::endl;
 	if (!saveStack(savepath_z.c_str(), arr_z, nx, ny, nz)) { std::cout << "Can't save image stack to '" << savepath_z << "'." << std::endl; }
+
+	float* arr_x = new float[nx * ny * nz];
+	std::memcpy(&arr_x[0], &arr0[0], num_byte * nx * ny * nz);
+	time_start = std::chrono::steady_clock::now();
+	if (!sortSimpleCuda(arr_x, 'x', nx, ny, nz)) { return; }
+	time_end = std::chrono::steady_clock::now();
+	duration = (float)((time_end - time_start).count()) / 1000000000.0;
+	std::cout << "Complete sorting along x-direction in " << duration << "s" << std::endl;
+	if (!saveStack(savepath_x.c_str(), arr_x, nx, ny, nz)) { std::cout << "Can't save image stack to '" << savepath_x << "'." << std::endl; }
 
 	delete[] arr0, arr_x, arr_y, arr_z;
 	std::cout << std::endl;
@@ -311,8 +347,8 @@ void example_sorting_network()
 	}
 	std::cout << "Array size: (nx,ny,nz)=(" << nx << "," << ny << "," << nz << ")" << std::endl;
 
-	float* arr_x = new float[nx*ny*nz];
-	std::memcpy(&arr_x[0], &arr0[0], num_byte*nx*ny*nz);
+	float* arr_x = new float[nx * ny * nz];
+	std::memcpy(&arr_x[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sortingNetworkCuda(arr_x, 'x', nx, ny, nz)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -320,8 +356,8 @@ void example_sorting_network()
 	std::cout << "Complete sorting along x-direction in " << duration << "s" << std::endl;
 	if (!saveStack(savepath_x.c_str(), arr_x, nx, ny, nz)) { std::cout << "Can't save image stack to '" << savepath_x << "'." << std::endl; }
 	//return;
-	float* arr_y = new float[nx*ny*nz];
-	std::memcpy(&arr_y[0], &arr0[0], num_byte*nx*ny*nz);
+	float* arr_y = new float[nx * ny * nz];
+	std::memcpy(&arr_y[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sortingNetworkCuda(arr_y, 'y', nx, ny, nz)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -329,8 +365,8 @@ void example_sorting_network()
 	std::cout << "Complete sorting along y-direction in " << duration << "s" << std::endl;
 	if (!saveStack(savepath_y.c_str(), arr_y, nx, ny, nz)) { std::cout << "Can't save image stack to '" << savepath_y << "'." << std::endl; }
 
-	float* arr_z = new float[nx*ny*nz];
-	std::memcpy(&arr_z[0], &arr0[0], num_byte*nx*ny*nz);
+	float* arr_z = new float[nx * ny * nz];
+	std::memcpy(&arr_z[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sortingNetworkCuda(arr_z, 'z', nx, ny, nz)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -364,8 +400,8 @@ void example_blocksize()
 	std::cout << "Array size: (nx,ny,nz)=(" << nx << "," << ny << "," << nz << ")" << std::endl;
 
 	int block_size1 = 512;
-	float* arr_1 = new float[nx*ny*nz];
-	std::memcpy(&arr_1[0], &arr0[0], num_byte*nx*ny*nz);
+	float* arr_1 = new float[nx * ny * nz];
+	std::memcpy(&arr_1[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sortCuda(arr_1, 'y', nx, ny, nz, algo, block_size1)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -374,8 +410,8 @@ void example_blocksize()
 	if (!saveStack(savepath_1.c_str(), arr_1, nx, ny, nz)) { std::cout << "Can't save image stack to '" << savepath_1 << "'." << std::endl; }
 
 	int block_size2 = 256;
-	float* arr_2 = new float[nx*ny*nz];
-	std::memcpy(&arr_2[0], &arr0[0], num_byte*nx*ny*nz);
+	float* arr_2 = new float[nx * ny * nz];
+	std::memcpy(&arr_2[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sortCuda(arr_2, 'y', nx, ny, nz, algo, block_size2)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -384,8 +420,8 @@ void example_blocksize()
 	if (!saveStack(savepath_2.c_str(), arr_2, nx, ny, nz)) { std::cout << "Can't save image stack to '" << savepath_2 << "'." << std::endl; }
 
 	int block_size3 = 128;
-	float* arr_3 = new float[nx*ny*nz];
-	std::memcpy(&arr_3[0], &arr0[0], num_byte*nx*ny*nz);
+	float* arr_3 = new float[nx * ny * nz];
+	std::memcpy(&arr_3[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sortCuda(arr_3, 'y', nx, ny, nz, algo, block_size3)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -420,15 +456,15 @@ void example_thread_diverge()
 	}
 	std::cout << "Array size: (nx,ny,nz)=(" << nx << "," << ny << "," << nz << ")" << std::endl;
 
-	float* arr_1 = new float[nx*ny*nz];
+	float* arr_1 = new float[nx * ny * nz];
 	algo = 0;
-	std::memcpy(&arr_1[0], &arr0[0], num_byte*nx*ny*nz);
+	std::memcpy(&arr_1[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sort(arr_1, 'y', nx, ny, nz, algo)) { return; }
 	time_end = std::chrono::steady_clock::now();
 	duration = (float)((time_end - time_start).count()) / 1000000000.0;
 	std::cout << "(CPU) Complete sorting using selection sort in " << duration << "s." << std::endl;
-	std::memcpy(&arr_1[0], &arr0[0], num_byte*nx*ny*nz);
+	std::memcpy(&arr_1[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sortCuda(arr_1, 'y', nx, ny, nz, algo, block_size)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -436,15 +472,15 @@ void example_thread_diverge()
 	std::cout << "(GPU) Complete sorting using selection sort in " << duration << "s." << std::endl;
 	if (!saveStack(savepath_1.c_str(), arr_1, nx, ny, nz)) { std::cout << "Can't save image stack to '" << savepath_1 << "'." << std::endl; }
 
-	float* arr_2 = new float[nx*ny*nz];
+	float* arr_2 = new float[nx * ny * nz];
 	algo = 1;
-	std::memcpy(&arr_2[0], &arr0[0], num_byte*nx*ny*nz);
+	std::memcpy(&arr_2[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sort(arr_2, 'y', nx, ny, nz, algo)) { return; }
 	time_end = std::chrono::steady_clock::now();
 	duration = (float)((time_end - time_start).count()) / 1000000000.0;
 	std::cout << "(CPU) Complete sorting using insertion sort in " << duration << "s." << std::endl;
-	std::memcpy(&arr_2[0], &arr0[0], num_byte*nx*ny*nz);
+	std::memcpy(&arr_2[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sortCuda(arr_2, 'y', nx, ny, nz, algo, block_size)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -452,15 +488,15 @@ void example_thread_diverge()
 	std::cout << "(GPU) Complete sorting using insertion sort in " << duration << "s." << std::endl;
 	if (!saveStack(savepath_2.c_str(), arr_2, nx, ny, nz)) { std::cout << "Can't save image stack to '" << savepath_2 << "'." << std::endl; }
 
-	float* arr_3 = new float[nx*ny*nz];
+	float* arr_3 = new float[nx * ny * nz];
 	algo = 2;
-	std::memcpy(&arr_3[0], &arr0[0], num_byte*nx*ny*nz);
+	std::memcpy(&arr_3[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sort(arr_3, 'y', nx, ny, nz, algo)) { return; }
 	time_end = std::chrono::steady_clock::now();
 	duration = (float)((time_end - time_start).count()) / 1000000000.0;
 	std::cout << "(CPU) Complete sorting using heap sort in " << duration << "s." << std::endl;
-	std::memcpy(&arr_3[0], &arr0[0], num_byte*nx*ny*nz);
+	std::memcpy(&arr_3[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sortCuda(arr_3, 'y', nx, ny, nz, algo, block_size)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -468,15 +504,15 @@ void example_thread_diverge()
 	std::cout << "(GPU) Complete sorting using heap sort in " << duration << "s." << std::endl;
 	if (!saveStack(savepath_3.c_str(), arr_3, nx, ny, nz)) { std::cout << "Can't save image stack to '" << savepath_3 << "'." << std::endl; }
 
-	float* arr_4 = new float[nx*ny*nz];
+	float* arr_4 = new float[nx * ny * nz];
 	algo = 3;
-	std::memcpy(&arr_4[0], &arr0[0], num_byte*nx*ny*nz);
+	std::memcpy(&arr_4[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sort(arr_4, 'y', nx, ny, nz, algo)) { return; }
 	time_end = std::chrono::steady_clock::now();
 	duration = (float)((time_end - time_start).count()) / 1000000000.0;
 	std::cout << "(CPU) Complete sorting using quick sort in " << duration << "s." << std::endl;
-	std::memcpy(&arr_4[0], &arr0[0], num_byte*nx*ny*nz);
+	std::memcpy(&arr_4[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sortCuda(arr_4, 'y', nx, ny, nz, algo, block_size)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -484,15 +520,15 @@ void example_thread_diverge()
 	std::cout << "(GPU) Complete sorting using quick sort in " << duration << "s." << std::endl;
 	if (!saveStack(savepath_4.c_str(), arr_4, nx, ny, nz)) { std::cout << "Can't save image stack to '" << savepath_4 << "'." << std::endl; }
 
-	float* arr_5 = new float[nx*ny*nz];
-	algo = 4; 
-	std::memcpy(&arr_5[0], &arr0[0], num_byte*nx*ny*nz);
+	float* arr_5 = new float[nx * ny * nz];
+	algo = 4;
+	std::memcpy(&arr_5[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sort(arr_5, 'y', nx, ny, nz, algo)) { return; }
 	time_end = std::chrono::steady_clock::now();
 	duration = (float)((time_end - time_start).count()) / 1000000000.0;
 	std::cout << "(CPU) Complete sorting using bitonic sort in " << duration << "s." << std::endl;
-	std::memcpy(&arr_5[0], &arr0[0], num_byte*nx*ny*nz);
+	std::memcpy(&arr_5[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sortCuda(arr_5, 'y', nx, ny, nz, algo, block_size)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -513,7 +549,7 @@ void example_memory_coalesce()
 	std::string savepath_z = RESOURCE_MAINDIR + std::string("\\sort\\after_z");
 	std::chrono::steady_clock::time_point time_start, time_end;
 	float duration = 0;
-	int algo = 4;
+	int algo = 0;
 	int block_size = 512;
 	int const num_byte = sizeof(float);
 	float* arr0 = nullptr;
@@ -525,8 +561,8 @@ void example_memory_coalesce()
 	}
 	std::cout << "Array size: (nx,ny,nz)=(" << nx << "," << ny << "," << nz << ")" << std::endl;
 
-	float* arr_x = new float[nx*ny*nz];
-	std::memcpy(&arr_x[0], &arr0[0], num_byte*nx*ny*nz);
+	float* arr_x = new float[nx * ny * nz];
+	std::memcpy(&arr_x[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sortCuda(arr_x, 'x', nx, ny, nz, algo, block_size)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -534,8 +570,8 @@ void example_memory_coalesce()
 	std::cout << "Complete sorting along x-direction in " << duration << "s" << std::endl;
 	if (!saveStack(savepath_x.c_str(), arr_x, nx, ny, nz)) { std::cout << "Can't save image stack to '" << savepath_x << "'." << std::endl; }
 
-	float* arr_y = new float[nx*ny*nz];
-	std::memcpy(&arr_y[0], &arr0[0], num_byte*nx*ny*nz);
+	float* arr_y = new float[nx * ny * nz];
+	std::memcpy(&arr_y[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sortCuda(arr_y, 'y', nx, ny, nz, algo, block_size)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -543,8 +579,8 @@ void example_memory_coalesce()
 	std::cout << "Complete sorting along y-direction in " << duration << "s" << std::endl;
 	if (!saveStack(savepath_y.c_str(), arr_y, nx, ny, nz)) { std::cout << "Can't save image stack to '" << savepath_y << "'." << std::endl; }
 
-	float* arr_z = new float[nx*ny*nz];
-	std::memcpy(&arr_z[0], &arr0[0], num_byte*nx*ny*nz);
+	float* arr_z = new float[nx * ny * nz];
+	std::memcpy(&arr_z[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sortCuda(arr_z, 'z', nx, ny, nz, algo, block_size)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -575,8 +611,8 @@ void example_shared_memory()
 	}
 	std::cout << "Array size: (nx,ny,nz)=(" << nx << "," << ny << "," << nz << ")" << std::endl;
 
-	float* arr_x = new float[nx*ny*nz];
-	std::memcpy(&arr_x[0], &arr0[0], num_byte*nx*ny*nz);
+	float* arr_x = new float[nx * ny * nz];
+	std::memcpy(&arr_x[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sortingNetworkCuda(arr_x, 'x', nx, ny, nz)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -584,8 +620,8 @@ void example_shared_memory()
 	std::cout << "Complete sorting along x-direction in " << duration << "s" << std::endl;
 	if (!saveStack(savepath_x.c_str(), arr_x, nx, ny, nz)) { std::cout << "Can't save image stack to '" << savepath_x << "'." << std::endl; }
 	//return;
-	float* arr_y = new float[nx*ny*nz];
-	std::memcpy(&arr_y[0], &arr0[0], num_byte*nx*ny*nz);
+	float* arr_y = new float[nx * ny * nz];
+	std::memcpy(&arr_y[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sortingNetworkCuda(arr_y, 'y', nx, ny, nz)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -593,8 +629,8 @@ void example_shared_memory()
 	std::cout << "Complete sorting along y-direction in " << duration << "s" << std::endl;
 	if (!saveStack(savepath_y.c_str(), arr_y, nx, ny, nz)) { std::cout << "Can't save image stack to '" << savepath_y << "'." << std::endl; }
 
-	float* arr_z = new float[nx*ny*nz];
-	std::memcpy(&arr_z[0], &arr0[0], num_byte*nx*ny*nz);
+	float* arr_z = new float[nx * ny * nz];
+	std::memcpy(&arr_z[0], &arr0[0], num_byte * nx * ny * nz);
 	time_start = std::chrono::steady_clock::now();
 	if (!sortingNetworkCuda(arr_z, 'z', nx, ny, nz)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -603,6 +639,48 @@ void example_shared_memory()
 	if (!saveStack(savepath_z.c_str(), arr_z, nx, ny, nz)) { std::cout << "Can't save image stack to '" << savepath_z << "'." << std::endl; }
 
 	delete[] arr0, arr_x, arr_y, arr_z;
+	std::cout << std::endl;
+}
+
+void example_texture()
+{
+	std::cout << "CUDA Optimization Example - Texture" << std::endl;
+	std::string imgdirpath = RESOURCE_MAINDIR + std::string("\\conicsection\\before");
+	std::string savepath_1 = RESOURCE_MAINDIR + std::string("\\conicsection\\after(notexture)");
+	std::string savepath_2 = RESOURCE_MAINDIR + std::string("\\conicsection\\after(withtexture)");
+	std::chrono::steady_clock::time_point time_start, time_end;
+	float duration = 0;
+	int const num_byte = sizeof(float);
+	float* arr0 = nullptr;
+	int nx, ny, nz;
+	if (!readStack(imgdirpath.c_str(), arr0, nx, ny, nz))
+	{
+		std::cout << "Can't read image stack from '" << imgdirpath << "'." << std::endl;
+		return;
+	}
+	std::cout << "Array size: (nx,ny,nz)=(" << nx << "," << ny << "," << nz << ")" << std::endl;
+	int n_angle = 360;
+	float* angle_s = new float[n_angle];
+	for (int i = 0; i < n_angle; i++) { angle_s[i] = M_PI / 180.f * (0.0 + (float)((i * 19) % 360)); }
+	int dst_nx = nx, dst_ny = ny;
+	float x0 = nx / 2, y0 = ny / 2, z0 = nz / 2;
+	float* arr1 = new float[n_angle * dst_nx * dst_ny];
+	time_start = std::chrono::steady_clock::now();
+	if (!slicing(arr1, n_angle, dst_nx, dst_ny, arr0, nx, ny, nz, x0, y0, z0, angle_s)) { return; }
+	time_end = std::chrono::steady_clock::now();
+	duration = (float)((time_end - time_start).count()) / 1000000000.0;
+	std::cout << "Complete slicing in " << duration << "s" << std::endl;
+	if (!saveStack(savepath_1.c_str(), arr1, dst_nx, dst_ny, n_angle)) { std::cout << "Can't save image stack to '" << savepath_1 << "'." << std::endl; }
+
+	float* arr2 = new float[n_angle * dst_nx * dst_ny];
+	time_start = std::chrono::steady_clock::now();
+	if (!slicingWithTexture(arr2, n_angle, dst_nx, dst_ny, arr0, nx, ny, nz, x0, y0, z0, angle_s)) { return; }
+	time_end = std::chrono::steady_clock::now();
+	duration = (float)((time_end - time_start).count()) / 1000000000.0;
+	std::cout << "Complete slicing using texture in " << duration << "s" << std::endl;
+	if (!saveStack(savepath_2.c_str(), arr2, dst_nx, dst_ny, n_angle)) { std::cout << "Can't save image stack to '" << savepath_2 << "'." << std::endl; }
+
+	delete[] arr0, arr1, arr2;
 	std::cout << std::endl;
 }
 
@@ -625,8 +703,8 @@ void example_cudastream()
 	}
 	std::cout << "Array size: (nx,ny)=(" << nx << "," << ny << ")" << std::endl;
 
-	float* arr_1 = new float[nx*ny];
-	std::memcpy(&arr_1[0], &arr0[0], num_byte*nx*ny);
+	float* arr_1 = new float[nx * ny];
+	std::memcpy(&arr_1[0], &arr0[0], num_byte * nx * ny);
 	time_start = std::chrono::steady_clock::now();
 	int algo = 3;
 	if (!sort(arr_1, 'x', nx, ny, 1, algo)) { return; }
@@ -635,8 +713,8 @@ void example_cudastream()
 	std::cout << "Complete sorting using CPU (quick sort) in " << duration << "s." << std::endl;
 	if (!saveImage(savepath_1.c_str(), arr_1, nx, ny, false)) { std::cout << "Can't save image stack to '" << savepath_1 << "'." << std::endl; }
 
-	float* arr_2 = new float[nx*ny];
-	std::memcpy(&arr_2[0], &arr0[0], num_byte*nx*ny);
+	float* arr_2 = new float[nx * ny];
+	std::memcpy(&arr_2[0], &arr0[0], num_byte * nx * ny);
 	time_start = std::chrono::steady_clock::now();
 	if (!sortingNetworkCuda(arr_2, 'x', nx, ny, 1)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -644,8 +722,8 @@ void example_cudastream()
 	std::cout << "Complete sorting using GPU (bitonic sort) without stream in " << duration << "s." << std::endl;
 	if (!saveImage(savepath_2.c_str(), arr_2, nx, ny, false)) { std::cout << "Can't save image stack to '" << savepath_2 << "'." << std::endl; }
 
-	float* arr_3 = new float[nx*ny];
-	std::memcpy(&arr_3[0], &arr0[0], num_byte*nx*ny);
+	float* arr_3 = new float[nx * ny];
+	std::memcpy(&arr_3[0], &arr0[0], num_byte * nx * ny);
 	time_start = std::chrono::steady_clock::now();
 	if (!sort2DWithStream(arr_3, nx, ny)) { return; }
 	time_end = std::chrono::steady_clock::now();
@@ -658,15 +736,109 @@ void example_cudastream()
 }
 
 
+void test_texture()
+{
+	std::cout << "CUDA Optimization Example - Texture Memory" << std::endl;
+	std::string imgdirpath = RESOURCE_MAINDIR + std::string("\\conicsection\\before2");
+	std::string savepath_1 = RESOURCE_MAINDIR + std::string("\\conicsection\\after_1");
+	std::string savepath_2 = RESOURCE_MAINDIR + std::string("\\conicsection\\after_2");
+	std::string savepath_3 = RESOURCE_MAINDIR + std::string("\\conicsection\\after_3");
+	std::chrono::steady_clock::time_point time_start, time_end;
+	float duration = 0;
+	int const num_byte = sizeof(float);
+	float* arr0 = nullptr;
+	int nx, ny, nz;
+	if (!readStack(imgdirpath.c_str(), arr0, nx, ny, nz))
+	{
+		std::cout << "Can't read image stack from '" << imgdirpath << "'." << std::endl;
+		return;
+	}
+	std::cout << "Array size: (nx,ny,nz)=(" << nx << "," << ny << "," << nz << ")" << std::endl;
+
+	int n_angle = 1440;
+	float* angle_s = new float[n_angle];
+	for (int i = 0; i < n_angle; i++) { angle_s[i] = M_PI / 180.f * (0.0 + (float)((i * 19) % 360)); }
+	int dst_nx = nx, dst_ny = ny;
+	float x0 = nx / 2, y0 = ny / 2, z0 = nz / 2;
+	float* arr1 = new float[n_angle * dst_nx * dst_ny];
+	//for (int i = 0; i < n_angle*dst_nx*dst_ny; i++) { arr1[i] = 0; }
+	time_start = std::chrono::steady_clock::now();
+	if (!slicingWithTexture(arr1, n_angle, dst_nx, dst_ny, arr0, nx, ny, nz, x0, y0, z0, angle_s)) { return; }
+	time_end = std::chrono::steady_clock::now();
+	duration = (float)((time_end - time_start).count()) / 1000000000.0;
+	std::cout << "Complete slicing in " << duration << "s" << std::endl;
+	if (!saveStack(savepath_1.c_str(), arr1, dst_nx, dst_ny, n_angle)) { std::cout << "Can't save image stack to '" << savepath_1 << "'." << std::endl; }
+
+	delete[] arr0, arr1;
+	std::cout << std::endl;
+}
+
+void test_bitonic()
+{
+	std::cout << "test bitonic sort." << std::endl;
+	std::string img_filepath = RESOURCE_MAINDIR + std::string("\\slice_big.tiff");
+	std::string img_savepath1 = RESOURCE_MAINDIR + std::string("\\result_x_bitonic.tiff");
+	std::string img_savepath2 = RESOURCE_MAINDIR + std::string("\\result_y_bitonic.tiff");
+	/*std::string img_filepath = RESOURCE_MAINDIR + std::string("\\slice_0.png");
+	std::string img_savepath1 = RESOURCE_MAINDIR + std::string("\\bitonic_middle1.png");
+	std::string img_savepath2 = RESOURCE_MAINDIR + std::string("\\bitonic_middle2.png");*/
+	int const num_byte = sizeof(float);
+	int nx, ny;
+	float* img0 = nullptr;
+	if (!readImage(img_filepath.c_str(), img0, nx, ny))
+	{
+		std::cout << "Can't read image file '" << img_filepath << "'." << std::endl;
+		return;
+	}
+	std::cout << "Image size:  (nx,ny)=(" << nx << "," << ny << ")" << std::endl;
+
+	float* img1 = new float[nx * ny];
+	std::memcpy(&img1[0], &img0[0], num_byte * nx * ny);
+	//nx = 4097; ny = 2045;
+	//nx = 1024; ny = 512;
+	for (int i = 0; i < ny; i++)
+	{
+		//selectionSort(img1, nx*i, 1, nx);
+		//heapSort(img1, nx*i, 1, nx);
+		bitonicSortVirtualPad(img1, nx * i, 1, nx);
+		//break;
+	}
+	if (!saveImage(img_savepath1.c_str(), img1, nx, ny, false))
+	{
+		std::cout << "Can't save image to '" << img_savepath1 << "'." << std::endl;
+		return;
+	}
+	std::cout << "Image saved to '" << img_savepath1 << "'." << std::endl;/**/
+	//return;
+
+	float* img2 = new float[nx * ny];
+	std::memcpy(&img2[0], &img0[0], num_byte * nx * ny);
+	for (int i = 0; i < nx; i++)
+	{
+		//selectionSort(img2, i, nx, ny);
+		//heapSort(img2, i, nx, ny);
+		bitonicSortVirtualPad(img2, i, nx, ny);
+	}
+	if (!saveImage(img_savepath2.c_str(), img2, nx, ny, false))
+	{
+		std::cout << "Can't save image to '" << img_savepath2 << "'." << std::endl;
+		return;
+	}
+	std::cout << "Image saved to '" << img_savepath2 << "'." << std::endl;
+
+
+}
+
 int main()
 {
 	//checkIndex1Dgrid_1Dblock();
 	//checkIndex2Dgrid_2Dblock();
 
 	example_arrayAdd();
-	example_flip();
-	example_transpose();
-	example_convolution2d();
+	//example_flip();
+	//example_transpose();
+	//example_convolution2d();
+	//example_conic_sections();
 
 	//example_sort_cpu();
 	//example_sort_gpu();
@@ -676,8 +848,10 @@ int main()
 	//example_thread_diverge();
 	//example_memory_coalesce();
 	//example_shared_memory();
+	//example_texture();
 	//example_cudastream();
 
 	return 0;
 }
+
 
